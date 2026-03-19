@@ -50,6 +50,8 @@ class PatientShareActivity : AppCompatActivity() {
                 put("age", patient.age)
                 put("gender", patient.gender)
                 put("bloodType", patient.bloodType)
+                put("medication", patient.medication)     // Added payload item
+                put("description", patient.description)   // Added payload item
                 put("patientId", patient.id)
                 put("sentAt", System.currentTimeMillis())
             }.toString()
