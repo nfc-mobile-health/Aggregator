@@ -1,97 +1,103 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@color/med_surface">
+    android:background="@color/med_surface"
+    android:fillViewport="true">
 
-    <!-- Header Banner -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingHorizontal="20dp"
-        android:paddingVertical="32dp"
-        android:layout_marginTop="32dp"
-        android:elevation="4dp"
-        android:background="@color/med_status_blue">
+        android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/statusText"
+        <!-- Header Banner -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Preparing Sync..."
-            android:textSize="18sp"
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp"
+            android:paddingVertical="32dp"
+            android:layout_marginTop="32dp"
+            android:elevation="4dp"
+            android:background="@color/med_status_blue">
+
+            <TextView
+                android:id="@+id/statusText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Preparing Sync..."
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:gravity="center"
+                android:letterSpacing="0.01"/>
+        </LinearLayout>
+
+        <!-- Logs Section -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Connection Logs"
+            android:textColor="@color/med_status_blue"
             android:textStyle="bold"
-            android:textColor="#FFFFFF"
-            android:gravity="center"
-            android:letterSpacing="0.01"/>
-    </LinearLayout>
-
-    <!-- Logs Section -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Connection Logs"
-        android:textColor="@color/med_status_blue"
-        android:textStyle="bold"
-        android:textSize="12sp"
-        android:textAllCaps="true"
-        android:letterSpacing="0.08"
-        android:paddingHorizontal="20dp"
-        android:paddingTop="20dp"
-        android:paddingBottom="8dp"/>
-
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="160dp"
-        android:paddingHorizontal="16dp"
-        android:paddingBottom="8dp">
-
-        <TextView
-            android:id="@+id/logText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
             android:textSize="12sp"
-            android:textColor="@color/med_text_secondary"
-            android:fontFamily="monospace"
-            android:lineSpacingMultiplier="1.4"
-            android:background="@color/med_surface_section"
-            android:padding="12dp"/>
-    </ScrollView>
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="@color/med_divider"
-        android:layout_marginHorizontal="16dp"
-        android:layout_marginTop="8dp"/>
-
-    <!-- File Info Section -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingHorizontal="20dp"
-        android:paddingTop="20dp"
-        android:paddingBottom="24dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Active Transfer"
-            android:textSize="11sp"
             android:textAllCaps="true"
             android:letterSpacing="0.08"
-            android:textColor="@color/med_text_secondary"
-            android:layout_marginBottom="8dp"/>
+            android:paddingHorizontal="20dp"
+            android:paddingTop="20dp"
+            android:paddingBottom="8dp"/>
 
-        <TextView
-            android:id="@+id/fileNameText"
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:paddingHorizontal="16dp"
+            android:paddingBottom="8dp">
+
+            <TextView
+                android:id="@+id/logText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:textColor="@color/med_text_secondary"
+                android:fontFamily="monospace"
+                android:lineSpacingMultiplier="1.4"
+                android:background="@color/med_surface_section"
+                android:padding="12dp"/>
+        </ScrollView>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/med_divider"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="8dp"/>
+
+        <!-- File Info Section -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="16sp"
-            android:textColor="@color/med_text_primary"
-            android:textStyle="bold"/>
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp"
+            android:paddingTop="20dp"
+            android:paddingBottom="24dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Active Transfer"
+                android:textSize="11sp"
+                android:textAllCaps="true"
+                android:letterSpacing="0.08"
+                android:textColor="@color/med_text_secondary"
+                android:layout_marginBottom="8dp"/>
+
+            <TextView
+                android:id="@+id/fileNameText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:textColor="@color/med_text_primary"
+                android:textStyle="bold"/>
+        </LinearLayout>
     </LinearLayout>
-</LinearLayout>
+</ScrollView>
