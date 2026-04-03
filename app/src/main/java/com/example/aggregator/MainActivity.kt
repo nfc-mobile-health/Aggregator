@@ -15,7 +15,7 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : BaseActivity() {
 
     private lateinit var fileRecyclerView: RecyclerView
     private lateinit var currentPathText: TextView
@@ -40,9 +40,9 @@ class MainActivity : AppCompatActivity() {
         val syncButton = findViewById<Button>(R.id.SenderButton)
         val updateButton = findViewById<Button>(R.id.ReceiverButton)
 
-        // Cloud sync button — opens dedicated sync screen
+         // Cloud sync button — opens dedicated sync screen
         findViewById<Button>(R.id.SyncHealthDbButton)?.setOnClickListener {
-            startActivity(Intent(this, SyncCloudActivity::class.java))
+            startActivity(Intent(this, SyncRepository::class.java))
         }
 
         sharePatientBtn.setOnClickListener {

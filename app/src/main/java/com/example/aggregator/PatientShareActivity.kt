@@ -12,7 +12,7 @@ import androidx.core.content.ContextCompat
 import org.json.JSONObject
 import java.nio.charset.StandardCharsets
 
-class PatientShareActivity : AppCompatActivity() {
+class PatientShareActivity : BaseActivity() {
 
     private lateinit var progressBar: ProgressBar
     private lateinit var statusText: TextView

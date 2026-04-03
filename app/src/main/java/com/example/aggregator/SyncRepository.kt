@@ -20,6 +20,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
+import androidx.appcompat.app.AppCompatActivity
 
 data class ReportRequest(
     @SerializedName("deviceId") val deviceId: String,
@@ -47,7 +48,7 @@ enum class ServerStatus {
     SERVER_DOWN
 }
 
-class SyncRepository {
+class SyncRepository: AppCompatActivity() {
     private val BASE_URL = "https://nursing-backend-vp5o.onrender.com"
     private var apiService: HealthApiService
 
