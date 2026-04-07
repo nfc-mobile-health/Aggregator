@@ -161,9 +161,18 @@ class MainActivity : AppCompatActivity() {
             View.VISIBLE
         }
 
-        val items = currentDirectory.listFiles()?.sortedWith(
-            compareBy<File> { !it.isDirectory }.thenByDescending { it.name }
-        ) ?: emptyList()
+        // Get current patient name for filtering (null = show all)
+        val patientFilter = PatientManager(this).getCurrentPatient()
+            ?.name?.replace(" ", "_")?.lowercase()
+
+        val items = currentDirectory.listFiles()
+            ?.sortedWith(compareBy<File> { !it.isDirectory }.thenByDescending { it.name })
+            ?.filter { file ->
+                // Always show directories; filter .txt files by patient name
+                file.isDirectory || patientFilter == null ||
+                    file.name.lowercase().contains(patientFilter)
+            }
+            ?: emptyList()
 
         fileListAdapter.updateFiles(items)
         fileRecyclerView.scrollToPosition(0)
