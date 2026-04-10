@@ -13,7 +13,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class SyncActivity : AppCompatActivity() {
+class SyncActivity : BaseActivity() {
 
     private lateinit var statusText: TextView
     private lateinit var fileNameText: TextView

@@ -20,7 +20,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class UpdateActivity : AppCompatActivity(), NfcAdapter.ReaderCallback {
+class UpdateActivity : BaseActivity(), NfcAdapter.ReaderCallback {
 
     private lateinit var statusText: TextView
     private lateinit var fileNameText: TextView

@@ -64,7 +64,7 @@
 
         <!-- Cloud Sync Activity -->
         <activity
-            android:name=".SyncCloudActivity"
+            android:name=".SyncRepository"
             android:exported="false"
             android:label="Sync to Cloud" />
 
