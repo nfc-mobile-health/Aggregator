@@ -8,7 +8,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import java.io.File
 
-class TextViewerActivity : AppCompatActivity() {
+class TextViewerActivity : BaseActivity() {
     private lateinit var fileNameText: TextView
     private lateinit var fileContentText: TextView
     private lateinit var backButton: Button

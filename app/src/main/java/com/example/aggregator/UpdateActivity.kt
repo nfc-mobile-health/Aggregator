@@ -20,7 +20,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class UpdateActivity : AppCompatActivity(), NfcAdapter.ReaderCallback {
+class UpdateActivity : BaseActivity(), NfcAdapter.ReaderCallback {
 
     private lateinit var statusText: TextView
     private lateinit var fileNameText: TextView
@@ -57,19 +57,63 @@ class UpdateActivity : AppCompatActivity(), NfcAdapter.ReaderCallback {
             isoDep.connect()
             isoDep.timeout = 10000
 
-            // 1. Handshake
-            isoDep.transceive(Utils.SELECT_APD)
+            // ===== NSE-AA Mutual Authentication (Sethia et al., 2019) =====
 
-            val sessionKey = CryptoUtils.generateSessionKey()
-            val encryptedKey = CryptoUtils.rsaEncrypt(sessionKey, CryptoUtils.getOtherPublicKey())
-            isoDep.transceive(Utils.concatArrays(CryptoUtils.CMD_AUTH_SEND_KEY, encryptedKey))
+            // Step 1: SELECT — receive challenge: N_S(16) || T1(var) || SW(2)
+            val selectRes = isoDep.transceive(Utils.SELECT_APD)
+            if (selectRes.size < 18) throw IOException("Invalid challenge from server")
 
-            val signature = CryptoUtils.rsaSign(encryptedKey, CryptoUtils.getMyPrivateKey())
-            val authRes = isoDep.transceive(Utils.concatArrays(CryptoUtils.CMD_AUTH_SEND_SIG, signature))
+            val serverNonce = selectRes.copyOfRange(0, 16)
+            val t1 = selectRes.copyOfRange(16, selectRes.size - 2)
 
-            // 2. Verify Auth
-            val decryptedAck = CryptoUtils.xorEncryptDecrypt(authRes.copyOfRange(0, authRes.size - 2), sessionKey)
-            if (String(decryptedAck) == "AUTH_OK") {
+            // Decrypt T1 to extract server's virtual identity and nonce
+            val t1Plain = CryptoUtils.aesDecrypt(t1, CryptoUtils.getKUD())
+            val serverVirtualId = t1Plain.copyOfRange(0, 16)
+            val serverNonceFromT1 = t1Plain.copyOfRange(16, 32)
+
+            // Verify server nonce consistency (anti-replay)
+            if (!serverNonceFromT1.contentEquals(serverNonce))
+                throw IOException("Challenge nonce mismatch")
+
+            // Verify server virtual identity (proves server knows its own id + K_UD)
+            val expectedVId = CryptoUtils.computeOtherVirtualIdentity(serverNonce)
+            if (!serverVirtualId.contentEquals(expectedVId))
+                throw IOException("Server identity verification failed")
+
+            // Step 2: Build AUTH_RESP
+            val readerNonce = CryptoUtils.generateNonce()
+            val readerVirtualId = CryptoUtils.generateMyVirtualIdentity(readerNonce)
+
+            // T2 = E(K_UD, pwb_R(32) || N_R(16) || N_S(16))
+            val t2 = CryptoUtils.aesEncrypt(
+                CryptoUtils.MY_PWB + readerNonce + serverNonce,
+                CryptoUtils.getKUD()
+            )
+
+            // Derive session key K_S via NSE-AA KDF
+            val sessionKey = CryptoUtils.deriveSessionKey(
+                CryptoUtils.MY_PWB, CryptoUtils.OTHER_PWB, readerNonce, serverNonce
+            )
+
+            // T3 = HMAC(K_S, id_VR || N_R || id_VS || N_S) — integrity proof
+            val t3 = CryptoUtils.hmacSha256(sessionKey,
+                readerVirtualId + readerNonce + serverVirtualId + serverNonce)
+
+            val authCmd = Utils.concatArrays(
+                CryptoUtils.CMD_AUTH_RESP, readerVirtualId, readerNonce, t2, t3
+            )
+            val authRes = isoDep.transceive(authCmd)
+
+            // Step 3: Verify server's mutual auth confirmation
+            val t4 = authRes.copyOfRange(0, authRes.size - 2)
+            val t4Plain = CryptoUtils.aesDecrypt(t4, sessionKey)
+            val authOk = String(t4Plain.copyOfRange(0, 7), Charsets.UTF_8)
+            val serverPwb = t4Plain.copyOfRange(7, 39)
+            val echoedNonce = t4Plain.copyOfRange(39, 55)
+
+            if (authOk == "AUTH_OK" &&
+                serverPwb.contentEquals(CryptoUtils.OTHER_PWB) &&
+                echoedNonce.contentEquals(readerNonce)) {
                 runOnUiThread { statusText.text = "Authenticated! Fetching Data..." }
 
                 // 3. Request File Info
@@ -88,7 +132,7 @@ class UpdateActivity : AppCompatActivity(), NfcAdapter.ReaderCallback {
                     throw IOException("Unsupported transfer mode: $mode")
                 }
             } else {
-                throw IOException("Authentication rejected by sender")
+                throw IOException("NSE-AA mutual authentication failed")
             }
         } catch (e: Exception) {
             runOnUiThread { statusText.text = "Error: ${e.message}" }

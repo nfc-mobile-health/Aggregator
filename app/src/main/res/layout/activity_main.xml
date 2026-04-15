@@ -55,7 +55,7 @@
                 android:layout_width="0dp"
                 android:layout_height="48dp"
                 android:layout_weight="1"
-                android:text="@string/sync"
+                android:text="Send Notes"
                 android:textAllCaps="false"
                 android:textSize="14sp"
                 android:textColor="@color/white"
@@ -67,7 +67,7 @@
                 android:layout_width="0dp"
                 android:layout_height="48dp"
                 android:layout_weight="1"
-                android:text="@string/update"
+                android:text="Recieve Notes"
                 android:textAllCaps="false"
                 android:textSize="14sp"
                 android:textColor="@color/white"
@@ -75,7 +75,6 @@
                 android:layout_marginStart="6dp"/>
 
         </LinearLayout>
-
     </LinearLayout>
 
     <!-- File Explorer Header -->
@@ -168,6 +167,20 @@
         app:layout_constraintTop_toTopOf="@+id/fileRecyclerView"
         app:layout_constraintBottom_toBottomOf="@+id/fileRecyclerView"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <!-- Floating Home Button - bottom right -->
+    <ImageButton
+        android:id="@+id/homeBtn"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:layout_margin="24dp"
+        android:src="@android:drawable/ic_menu_revert"
+        android:background="@color/med_green_primary"
+        android:contentDescription="Go to Home"
+        android:padding="12dp"
+        android:elevation="6dp"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
