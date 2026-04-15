@@ -6,115 +6,105 @@ import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
+import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
+import java.io.File
 
 class SyncCloudActivity : AppCompatActivity() {
 
-    private lateinit var progressBar: ProgressBar
     private lateinit var statusText: TextView
-    private lateinit var detailText: TextView
-    private lateinit var cancelBtn: Button
+    private lateinit var fileNameText: TextView
+    private lateinit var progressBar: ProgressBar
+    private lateinit var syncNowButton: Button
 
-    private val syncRepository by lazy { SyncRepository() }
-    private var syncJob: Job? = null
+    private val repo = SyncRepository()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_sync_cloud)
 
-        progressBar = findViewById(R.id.syncProgressBar)
-        statusText = findViewById(R.id.syncStatusText)
-        detailText = findViewById(R.id.syncDetailText)
-        cancelBtn = findViewById(R.id.syncCancelBtn)
+        statusText   = findViewById(R.id.cloudStatusText)
+        fileNameText = findViewById(R.id.cloudFileNameText)
+        progressBar  = findViewById(R.id.cloudProgressBar)
+        syncNowButton = findViewById(R.id.syncNowButton)
 
-        cancelBtn.setOnClickListener {
-            syncJob?.cancel()
-            finish()
+        syncNowButton.setOnClickListener { startSync() }
+
+        checkServer()
+    }
+
+    private fun checkServer() {
+        setLoading(true)
+        statusText.text = "Checking server..."
+
+        lifecycleScope.launch {
+            when (repo.checkServerStatus()) {
+                ServerStatus.AWAKE -> {
+                    statusText.text = "Server online — ready to sync"
+                    showLatestFile()
+                    syncNowButton.isEnabled = true
+                }
+                ServerStatus.WAKING_UP -> {
+                    statusText.text = "Server is starting up (30–60s). Try again shortly."
+                    fileNameText.text = "Render free tier cold start."
+                }
+                ServerStatus.NO_INTERNET -> {
+                    statusText.text = "No internet connection."
+                    fileNameText.text = "Check Wi-Fi or mobile data."
+                }
+                ServerStatus.SERVER_DOWN -> {
+                    statusText.text = "Server unreachable."
+                    fileNameText.text = "Backend may be down."
+                }
+            }
+            setLoading(false)
         }
+    }
 
-        startSync()
+    private fun showLatestFile() {
+        val appFilesDir = getExternalFilesDir(null) ?: return
+        val nursingDir = File(appFilesDir, "NursingDevice")
+
+        val latestFile = nursingDir.listFiles()
+            ?.filter { it.isDirectory }
+            ?.flatMap { it.listFiles()?.toList() ?: emptyList() }
+            ?.filter { it.isFile && it.extension == "txt" }
+            ?.maxByOrNull { it.lastModified() }
+
+        if (latestFile != null) {
+            val dateLabel = latestFile.parentFile?.name ?: "unknown date"
+            fileNameText.text = "File: ${latestFile.name}\nDate: $dateLabel\nSize: ${latestFile.length()} bytes"
+        } else {
+            fileNameText.text = "No record files found in NursingDevice folder."
+            syncNowButton.isEnabled = false
+        }
     }
 
     private fun startSync() {
-        syncJob = CoroutineScope(Dispatchers.Main).launch {
-            // Phase 1: Poll until server is awake
-            var attempts = 0
-            val maxWakeAttempts = 12
-            var serverReady = false
+        setLoading(true)
+        syncNowButton.isEnabled = false
+        statusText.text = "Syncing..."
 
-            statusText.text = "Checking server status..."
-            detailText.text = "Pinging server..."
-
-            while (attempts < maxWakeAttempts) {
-                val status = syncRepository.checkServerStatus()
-                attempts++
-
-                when (status) {
-                    ServerStatus.AWAKE -> {
-                        serverReady = true
-                        break
-                    }
-                    ServerStatus.WAKING_UP -> {
-                        statusText.text = "Server is waking up..."
-                        detailText.text = "Free tier is spinning up. This may take up to a minute.\nAttempt $attempts of $maxWakeAttempts"
-                    }
-                    ServerStatus.NO_INTERNET -> {
-                        showError("No internet connection", "Please check your network and try again.")
-                        return@launch
-                    }
-                    ServerStatus.SERVER_DOWN -> {
-                        showError(
-                            "Server is unreachable",
-                            "The server appears to be down.\nThis is not a wake-up delay — the server may be offline."
-                        )
-                        return@launch
-                    }
-                }
-
-                delay(5000)
-            }
-
-            if (!serverReady) {
-                showError(
-                    "Server did not wake up",
-                    "Timed out after $maxWakeAttempts attempts.\nThe server may need manual attention."
-                )
-                return@launch
-            }
-
-            // Phase 2: Server is awake — sync
-            statusText.text = "Server is awake!"
-            detailText.text = "Uploading report..."
-
-            val result = syncRepository.syncLatestReport(this@SyncCloudActivity)
+        lifecycleScope.launch {
+            val result = repo.syncLatestRecord(this@SyncCloudActivity)
 
             result.fold(
                 onSuccess = { message ->
-                    progressBar.visibility = View.GONE
-                    statusText.text = "Sync successful!"
-                    detailText.text = message
-                    cancelBtn.text = "Done"
+                    statusText.text = "Sync complete"
+                    fileNameText.text = message
+                    syncNowButton.isEnabled = true
                 },
                 onFailure = { error ->
-                    showError("Sync failed", error.message ?: "Unknown error")
+                    statusText.text = "Sync failed"
+                    fileNameText.text = error.message ?: "Unknown error"
+                    syncNowButton.isEnabled = true
                 }
             )
+            setLoading(false)
         }
     }
 
-    private fun showError(title: String, detail: String) {
-        progressBar.visibility = View.GONE
-        statusText.text = title
-        detailText.text = detail
-        cancelBtn.text = "Close"
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        syncJob?.cancel()
+    private fun setLoading(loading: Boolean) {
+        progressBar.visibility = if (loading) View.VISIBLE else View.GONE
     }
 }

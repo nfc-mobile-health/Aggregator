@@ -6,9 +6,12 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 
-class AuthActivity : BaseActivity() {
+class AuthActivity : AppCompatActivity() {
     private lateinit var patientManager: PatientManager
+    private val patientRepo = PatientRepository()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -16,17 +19,14 @@ class AuthActivity : BaseActivity() {
 
         patientManager = PatientManager(this)
 
-        val registerBtn = findViewById<Button>(R.id.registerBtn)
-        val loginBtn = findViewById<Button>(R.id.loginBtn)
-
-        registerBtn.setOnClickListener { showRegisterForm() }
-        loginBtn.setOnClickListener { checkCachedPatient() }
+        findViewById<Button>(R.id.registerBtn).setOnClickListener { handleRegister() }
+        findViewById<Button>(R.id.loginBtn).setOnClickListener { checkCachedPatient() }
     }
 
-    private fun showRegisterForm() {
-        val name = findViewById<EditText>(R.id.patientName).text.toString().trim()
-        val age = findViewById<EditText>(R.id.patientAge).text.toString().trim()
-        val gender = findViewById<EditText>(R.id.patientGender).text.toString().trim()
+    private fun handleRegister() {
+        val name      = findViewById<EditText>(R.id.patientName).text.toString().trim()
+        val age       = findViewById<EditText>(R.id.patientAge).text.toString().trim()
+        val gender    = findViewById<EditText>(R.id.patientGender).text.toString().trim()
         val bloodType = findViewById<EditText>(R.id.patientBloodType).text.toString().trim()
 
         if (name.isEmpty() || age.isEmpty() || gender.isEmpty() || bloodType.isEmpty()) {
@@ -35,13 +35,23 @@ class AuthActivity : BaseActivity() {
         }
 
         val patient = Patient(
-            name = name,
-            age = age.toIntOrNull() ?: 0,
-            gender = gender,
+            name      = name,
+            age       = age.toIntOrNull() ?: 0,
+            gender    = gender,
             bloodType = bloodType
         )
 
+        // Save locally immediately so the app works even if backend is offline
         patientManager.savePatient(patient)
+
+        // Register with backend in background — non-blocking
+        lifecycleScope.launch {
+            patientRepo.register(patient).fold(
+                onSuccess = { Toast.makeText(this@AuthActivity, "Registered: $name", Toast.LENGTH_SHORT).show() },
+                onFailure = { Toast.makeText(this@AuthActivity, "Saved locally (${it.message})", Toast.LENGTH_LONG).show() }
+            )
+        }
+
         goToMain(patient.name)
     }
 
@@ -56,10 +66,9 @@ class AuthActivity : BaseActivity() {
     }
 
     private fun goToMain(patientName: String) {
-        val intent = Intent(this, MainActivity::class.java).apply {
+        startActivity(Intent(this, MainActivity::class.java).apply {
             putExtra("patient_name", patientName)
-        }
-        startActivity(intent)
+        })
         finish()
     }
 }
