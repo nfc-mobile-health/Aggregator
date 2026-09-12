@@ -54,6 +54,7 @@ class PatientShareActivity : AppCompatActivity() {
                 put("sugar", patient.sugar)
                 put("height", patient.height)
                 put("weight", patient.weight)
+                put("oxygenLevel", patient.oxygenLevel)
                 put("medication", patient.medication)     // Added payload item
                 put("description", patient.description)   // Added payload item
                 put("patientId", patient.id)

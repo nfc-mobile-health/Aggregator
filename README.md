@@ -115,6 +115,7 @@ Files are named `medical_data_<patient_name>.txt` (spaces replaced with undersco
 | `Heart Rate: <n> bpm` | `hr` (Int) |
 | `Respiratory Rate: <n> breaths/min` | `rr` (Int) |
 | `Body Temperature: <n>F` | `temp` (Float) |
+| `Oxygen Level: <n>%` | `oxygenLevel` (Int) |
 | `Medication: ` | `med` |
 | `Description: ` | `obs` |
 | `Updated on: dd/MM/yyyy HH:mm:ss` | `date` (from folder name) + `time` (HH:mm) |

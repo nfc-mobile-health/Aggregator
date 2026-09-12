@@ -43,6 +43,7 @@ data class RecordRequest(
     @SerializedName("hr") val hr: Int?,
     @SerializedName("rr") val rr: Int?,
     @SerializedName("temp") val temp: Float?,
+    @SerializedName("oxygenLevel", alternate = ["spo2"]) val oxygenLevel: Int? = null,
     @SerializedName("obs") val obs: String?,
     @SerializedName("med") val med: String?
 )
@@ -133,6 +134,7 @@ class SyncRepository {
     //   Heart Rate: <value> bpm
     //   Respiratory Rate: <value> breaths/min
     //   Body Temperature: <value>F
+    //   Oxygen Level: <value>%
     //   Medication: <value>
     //   Description: <value>
     //   Updated on: dd/MM/yyyy HH:mm:ss
@@ -150,6 +152,7 @@ class SyncRepository {
         val hr      = extractLine("Heart Rate: ")?.removeSuffix(" bpm")?.trim()?.toIntOrNull()
         val rr      = extractLine("Respiratory Rate: ")?.removeSuffix(" breaths/min")?.trim()?.toIntOrNull()
         val temp    = extractLine("Body Temperature: ")?.removeSuffix("F")?.trim()?.toFloatOrNull()
+        val oxygenLevel = extractLine("Oxygen Level: ")?.removeSuffix("%")?.trim()?.toIntOrNull()
         val med     = extractLine("Medication: ")
         val obs     = extractLine("Description: ")
 
@@ -165,7 +168,19 @@ class SyncRepository {
             ?: extractLine("Patient Name: ")
             ?: "unknown"
 
-        return RecordRequest(patientId, nurseId, date, time, bp, hr, rr, temp, obs, med)
+        return RecordRequest(
+            patientId = patientId,
+            nurseId = nurseId,
+            date = date,
+            time = time,
+            bp = bp,
+            hr = hr,
+            rr = rr,
+            temp = temp,
+            obs = obs,
+            med = med,
+            oxygenLevel = oxygenLevel
+        )
     }
 
     private suspend fun syncReportEntity(context: Context, report: PatientReportEntity): Result<String> =

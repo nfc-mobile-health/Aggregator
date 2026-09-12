@@ -134,6 +134,62 @@
                 android:textSize="15sp"
                 android:layout_marginBottom="12dp"/>
 
+            <EditText
+                android:id="@+id/patientSugar"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:hint="Blood Sugar (mg/dL, optional)"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:background="@drawable/medical_input_bg"
+                android:inputType="number"
+                android:textColor="@color/med_text_primary"
+                android:textColorHint="@color/med_text_hint"
+                android:textSize="15sp"
+                android:layout_marginBottom="12dp"/>
+
+            <EditText
+                android:id="@+id/patientHeight"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:hint="Height (cm, optional)"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:background="@drawable/medical_input_bg"
+                android:inputType="numberDecimal"
+                android:textColor="@color/med_text_primary"
+                android:textColorHint="@color/med_text_hint"
+                android:textSize="15sp"
+                android:layout_marginBottom="12dp"/>
+
+            <EditText
+                android:id="@+id/patientWeight"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:hint="Weight (kg, optional)"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:background="@drawable/medical_input_bg"
+                android:inputType="numberDecimal"
+                android:textColor="@color/med_text_primary"
+                android:textColorHint="@color/med_text_hint"
+                android:textSize="15sp"
+                android:layout_marginBottom="12dp"/>
+
+            <EditText
+                android:id="@+id/patientOxygenLevel"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:hint="Oxygen Level (% SpO2, optional)"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:background="@drawable/medical_input_bg"
+                android:inputType="number"
+                android:textColor="@color/med_text_primary"
+                android:textColorHint="@color/med_text_hint"
+                android:textSize="15sp"
+                android:layout_marginBottom="12dp"/>
+
             <!-- PIN - encrypts the local database (set at registration) -->
             <FrameLayout
                 android:layout_width="match_parent"

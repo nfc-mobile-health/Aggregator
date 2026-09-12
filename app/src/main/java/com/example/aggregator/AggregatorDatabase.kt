@@ -25,6 +25,7 @@ data class PatientEntity(
     @ColumnInfo(defaultValue = "''") val sugar: String = "",
     @ColumnInfo(defaultValue = "''") val height: String = "",
     @ColumnInfo(defaultValue = "''") val weight: String = "",
+    @ColumnInfo(defaultValue = "''") val oxygenLevel: String = "",
     val medication: String,
     val description: String,
     @ColumnInfo(defaultValue = "0") val isCurrent: Boolean = false,

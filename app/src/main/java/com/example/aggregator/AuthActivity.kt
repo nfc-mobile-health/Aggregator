@@ -61,12 +61,16 @@ class AuthActivity : AppCompatActivity() {
     }
 
     private fun handleRegister() {
-        val typedId   = patientIdInput.text.toString().trim()
-        val name      = findViewById<EditText>(R.id.patientName).text.toString().trim()
-        val age       = findViewById<EditText>(R.id.patientAge).text.toString().trim()
-        val gender    = findViewById<EditText>(R.id.patientGender).text.toString().trim()
-        val bloodType = findViewById<EditText>(R.id.patientBloodType).text.toString().trim()
-        val pin       = pinInput.text.toString().trim()
+        val typedId     = patientIdInput.text.toString().trim()
+        val name        = findViewById<EditText>(R.id.patientName).text.toString().trim()
+        val age         = findViewById<EditText>(R.id.patientAge).text.toString().trim()
+        val gender      = findViewById<EditText>(R.id.patientGender).text.toString().trim()
+        val bloodType   = findViewById<EditText>(R.id.patientBloodType).text.toString().trim()
+        val sugar       = findViewById<EditText>(R.id.patientSugar).text?.toString()?.trim().orEmpty()
+        val height      = findViewById<EditText>(R.id.patientHeight).text?.toString()?.trim().orEmpty()
+        val weight      = findViewById<EditText>(R.id.patientWeight).text?.toString()?.trim().orEmpty()
+        val oxygenLevel = findViewById<EditText>(R.id.patientOxygenLevel).text?.toString()?.trim().orEmpty()
+        val pin         = pinInput.text.toString().trim()
 
         if (name.isEmpty() || age.isEmpty() || gender.isEmpty() || bloodType.isEmpty()) {
             Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show()
@@ -77,14 +81,15 @@ class AuthActivity : AppCompatActivity() {
             return
         }
 
-        // Honor the ID the patient typed — it's what they'll log in with later.
-        // Previously this field was ignored and a timestamp ID was silently
-        // generated, so the typed ID could never be used to log back in.
         val patient = Patient(
-            name      = name,
-            age       = age.toIntOrNull() ?: 0,
-            gender    = gender,
-            bloodType = bloodType
+            name        = name,
+            age         = age.toIntOrNull() ?: 0,
+            gender      = gender,
+            bloodType   = bloodType,
+            sugar       = sugar,
+            height      = height,
+            weight      = weight,
+            oxygenLevel = oxygenLevel
         ).let { if (typedId.isEmpty()) it else it.copy(id = typedId) }
 
         // Provision the PIN-derived DB key BEFORE any DB access (the DB is encrypted).
@@ -191,7 +196,11 @@ class AuthActivity : AppCompatActivity() {
                         name = cloudPatient.name,
                         age = cloudPatient.age ?: 0,
                         gender = cloudPatient.gender.orEmpty(),
-                        bloodType = cloudPatient.bloodType.orEmpty()
+                        bloodType = cloudPatient.bloodType.orEmpty(),
+                        sugar = cloudPatient.sugar.orEmpty(),
+                        height = cloudPatient.height.orEmpty(),
+                        weight = cloudPatient.weight.orEmpty(),
+                        oxygenLevel = cloudPatient.oxygenLevel.orEmpty()
                     )
                     patientManager.savePatient(localPatient)
 

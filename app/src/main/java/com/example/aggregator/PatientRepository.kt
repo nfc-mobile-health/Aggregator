@@ -32,7 +32,8 @@ data class PatientRegisterRequest(
     @SerializedName("bloodType") val bloodType: String?,
     @SerializedName("sugar") val sugar: String?,
     @SerializedName("height") val height: String?,
-    @SerializedName("weight") val weight: String?
+    @SerializedName("weight") val weight: String?,
+    @SerializedName("oxygenLevel", alternate = ["spo2"]) val oxygenLevel: String? = null
 )
 
 data class PatientRegisterResponse(
@@ -62,7 +63,8 @@ data class PatientCloudData(
     @SerializedName("bloodType") val bloodType: String?,
     @SerializedName("sugar") val sugar: String?,
     @SerializedName("height") val height: String?,
-    @SerializedName("weight") val weight: String?
+    @SerializedName("weight") val weight: String?,
+    @SerializedName("oxygenLevel", alternate = ["spo2"]) val oxygenLevel: String? = null
 )
 
 /** Login result: the cloud patient profile plus any stored credentials to restore. */
@@ -80,6 +82,7 @@ data class PatientRecordData(
     @SerializedName("hr") val hr: Int?,
     @SerializedName("rr") val rr: Int?,
     @SerializedName("temp") val temp: Float?,
+    @SerializedName("oxygenLevel", alternate = ["spo2"]) val oxygenLevel: Int? = null,
     @SerializedName("obs") val obs: String?,
     @SerializedName("med") val med: String?
 )
@@ -130,7 +133,8 @@ class PatientRepository {
             bloodType = patient.bloodType,
             sugar = patient.sugar,
             height = patient.height,
-            weight = patient.weight
+            weight = patient.weight,
+            oxygenLevel = patient.oxygenLevel
         )
 
         val primaryResult = runCatching { primaryApi.registerPatient(request) }
@@ -350,11 +354,17 @@ class PatientRepository {
             appendLine("Blood Sugar: ${patient.sugar.orEmpty()}")
             appendLine("Height: ${patient.height.orEmpty()}")
             appendLine("Weight: ${patient.weight.orEmpty()}")
+            if (!patient.oxygenLevel.isNullOrBlank()) {
+                appendLine("Oxygen Level: ${patient.oxygenLevel}%")
+            }
             appendLine("Nurse ID: ${record.nurseId.orEmpty()}")
             appendLine("Blood Pressure: ${record.bp.orEmpty()}")
             appendLine("Heart Rate: ${record.hr?.toString() ?: ""} bpm")
             appendLine("Respiratory Rate: ${record.rr?.toString() ?: ""} breaths/min")
             appendLine("Body Temperature: ${formatTemperature(record.temp)}F")
+            if (record.oxygenLevel != null) {
+                appendLine("Oxygen Level: ${record.oxygenLevel}%")
+            }
             appendLine("Medication: ${record.med.orEmpty()}")
             appendLine("Description: ${record.obs.orEmpty()}")
             append("Updated on: $updatedOn")
