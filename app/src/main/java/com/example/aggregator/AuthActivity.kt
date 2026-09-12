@@ -123,7 +123,7 @@ class AuthActivity : AppCompatActivity() {
         // saveFromServer() persists it. Use applicationContext — the activity is gone.
         val appContext = applicationContext
         ProvisioningScope.launch {
-            patientRepo.register(patient).fold(
+            patientRepo.register(patient, pin).fold(
                 onSuccess = { reg ->
                     val creds = reg.credentials
                     val credNote = if (creds?.privateKey != null &&
@@ -188,7 +188,7 @@ class AuthActivity : AppCompatActivity() {
 
         setLoading(true)
         lifecycleScope.launch {
-            patientRepo.login(patientId).fold(
+            patientRepo.login(patientId, pin).fold(
                 onSuccess = { loginData ->
                     val cloudPatient = loginData.patient
                     val localPatient = Patient(
@@ -229,6 +229,18 @@ class AuthActivity : AppCompatActivity() {
                     goToMain(cloudPatient.name)
                 },
                 onFailure = { error ->
+                    val isInvalidPin = error.message?.contains("PIN", ignoreCase = true) == true ||
+                            error.message?.contains("401") == true
+                    if (isInvalidPin) {
+                        AggregatorSession.lock()
+                        Toast.makeText(
+                            this@AuthActivity,
+                            error.message ?: "Invalid PIN. Login failed.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        return@fold
+                    }
+
                     val cachedPatient = patientManager.getCurrentPatient()
                     if (cachedPatient?.id == patientId) {
                         Toast.makeText(

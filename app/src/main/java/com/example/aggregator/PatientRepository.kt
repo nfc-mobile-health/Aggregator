@@ -33,7 +33,20 @@ data class PatientRegisterRequest(
     @SerializedName("sugar") val sugar: String?,
     @SerializedName("height") val height: String?,
     @SerializedName("weight") val weight: String?,
-    @SerializedName("oxygenLevel", alternate = ["spo2"]) val oxygenLevel: String? = null
+    @SerializedName("oxygenLevel", alternate = ["spo2"]) val oxygenLevel: String? = null,
+    @SerializedName("pin") val pin: String? = null
+)
+
+data class PatientLoginRequest(
+    @SerializedName("patientId") val patientId: String,
+    @SerializedName("pin") val pin: String
+)
+
+data class PatientLoginResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("message") val message: String?,
+    @SerializedName("patient") val patient: PatientCloudData?,
+    @SerializedName("credentials") val credentials: Credentials? = null
 )
 
 data class PatientRegisterResponse(
@@ -52,7 +65,8 @@ data class PatientRegistration(
 data class PatientApiResponse(
     @SerializedName("success") val success: Boolean,
     @SerializedName("message") val message: String?,
-    @SerializedName("patient") val patient: PatientCloudData?
+    @SerializedName("patient") val patient: PatientCloudData?,
+    @SerializedName("credentials") val credentials: Credentials? = null
 )
 
 data class PatientCloudData(
@@ -91,6 +105,9 @@ interface PatientApiService {
     @POST("api/patients/register")
     suspend fun registerPatient(@Body request: PatientRegisterRequest): PatientRegisterResponse
 
+    @POST("api/patients/login")
+    suspend fun loginPatient(@Body request: PatientLoginRequest): PatientLoginResponse
+
     @GET("api/patients/{patientId}")
     suspend fun getPatient(@Path("patientId") patientId: String): PatientApiResponse
 }
@@ -124,7 +141,7 @@ class PatientRepository {
             .build()
             .create(PatientApiService::class.java)
 
-    suspend fun register(patient: Patient): Result<PatientRegistration> = withContext(Dispatchers.IO) {
+    suspend fun register(patient: Patient, pin: String? = null): Result<PatientRegistration> = withContext(Dispatchers.IO) {
         val request = PatientRegisterRequest(
             patientId = patient.id,
             name = patient.name,
@@ -134,7 +151,8 @@ class PatientRepository {
             sugar = patient.sugar,
             height = patient.height,
             weight = patient.weight,
-            oxygenLevel = patient.oxygenLevel
+            oxygenLevel = patient.oxygenLevel,
+            pin = pin
         )
 
         val primaryResult = runCatching { primaryApi.registerPatient(request) }
@@ -142,7 +160,10 @@ class PatientRepository {
             primaryResult.isSuccess -> primaryResult.getOrThrow()
             else -> runCatching { secondaryApi.registerPatient(request) }.getOrElse { error ->
                 Log.e("PatientRepository", "register", error)
-                return@withContext Result.failure(error)
+                val msg = if (error is retrofit2.HttpException) {
+                    parseErrorMessage(error) ?: "HTTP ${error.code()}"
+                } else error.message ?: "Registration failed"
+                return@withContext Result.failure(Exception(msg))
             }
         }
 
@@ -153,8 +174,51 @@ class PatientRepository {
         }
     }
 
-    suspend fun login(patientId: String): Result<PatientLoginData> = withContext(Dispatchers.IO) {
-        fetchPatient(patientId)
+    suspend fun login(patientId: String, pin: String): Result<PatientLoginData> = withContext(Dispatchers.IO) {
+        val request = PatientLoginRequest(patientId = patientId, pin = pin)
+        val primaryResult = runCatching { primaryApi.loginPatient(request) }
+        val response = when {
+            primaryResult.isSuccess -> primaryResult.getOrThrow()
+            else -> {
+                val primaryErr = primaryResult.exceptionOrNull()
+                // If primary explicitly returned 401 Unauthorized, do not fallback — PIN was wrong!
+                if (primaryErr is retrofit2.HttpException && primaryErr.code() == 401) {
+                    val msg = parseErrorMessage(primaryErr) ?: "Invalid PIN. Please check your PIN and try again."
+                    return@withContext Result.failure(Exception(msg))
+                }
+                runCatching { secondaryApi.loginPatient(request) }.getOrElse { error ->
+                    Log.e("PatientRepository", "login", error)
+                    if (error is retrofit2.HttpException) {
+                        val msg = parseErrorMessage(error) ?: if (error.code() == 401) "Invalid PIN. Please check your PIN and try again." else "HTTP ${error.code()}"
+                        return@withContext Result.failure(Exception(msg))
+                    }
+                    if (primaryErr is retrofit2.HttpException) {
+                        val msg = parseErrorMessage(primaryErr) ?: "HTTP ${primaryErr.code()}"
+                        return@withContext Result.failure(Exception(msg))
+                    }
+                    return@withContext Result.failure(error)
+                }
+            }
+        }
+
+        if (response.success && response.patient != null) {
+            Result.success(PatientLoginData(response.patient, response.credentials))
+        } else {
+            Result.failure(Exception(response.message ?: "Patient login failed"))
+        }
+    }
+
+    private fun parseErrorMessage(e: retrofit2.HttpException): String? {
+        return try {
+            val body = e.response()?.errorBody()?.string().orEmpty()
+            if (body.isBlank()) return null
+            val root = JsonParser().parse(body)
+            if (root.isJsonObject && root.asJsonObject.has("message")) {
+                root.asJsonObject.get("message").asString
+            } else null
+        } catch (_: Exception) {
+            null
+        }
     }
 
     suspend fun syncPatientRecords(context: Context, patient: PatientCloudData): Result<Int> =
